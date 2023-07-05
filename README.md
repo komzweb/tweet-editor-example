@@ -1,10 +1,38 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Tweet Editor Example
 
-## Getting Started
+A simple tweet editor coded by [ChatGPT](https://openai.com/blog/chatgpt). This app built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
 
-First, run the development server:
+![ChatGPT Next.js App Router](tweet-editor-example.png)
 
-```bash
+**Features:**
+
+- Count the number of characters (turns red after 280 characters)
+- URLs are uniformly counted at 22 characters
+- The entered text will be displayed in a separate area
+- Hashtags (#abc), handles (@123), and URLs are displayed in blue
+- Copy text
+
+## Run Locally
+
+1. Clone the repo:
+
+```sh
+git clone https://github.com/komzweb/tweet-editor-example.git
+```
+
+2. Install dependencies:
+
+```sh
+npm install
+# or
+yarn
+# or
+pnpm
+```
+
+3. Run the server:
+
+```sh
 npm run dev
 # or
 yarn dev
@@ -12,23 +40,4 @@ yarn dev
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Visit http://localhost:3000

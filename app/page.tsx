@@ -1,112 +1,154 @@
-import Image from 'next/image'
+'use client'
+
+import { useRef, useState, Fragment } from 'react'
+
+const hashtagRegex =
+  /(^|\s)#(?=.*[a-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uF900-\uFAFF])[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uF900-\uFAFF]+(?=\s|$)/g
+const handleRegex = /(^|\s)@[a-zA-Z0-9]+(?=\s|$)/g
+const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/g
 
 export default function Home() {
+  const [text, setText] = useState('')
+  const [count, setCount] = useState(0)
+
+  const contentRef = useRef<HTMLDivElement>(null)
+  const textAreaRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleCopy = () => {
+    if (contentRef.current) {
+      const content = contentRef.current.innerText
+      navigator.clipboard.writeText(content)
+    }
+  }
+
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const inputValue = event.target.value
+    const urlMatches: string[] = inputValue.match(urlRegex) || []
+    const urlLength = urlMatches.reduce((acc, match) => acc + 22, 0)
+    const nonUrlText = inputValue.replace(urlRegex, '')
+    const nonUrlLength = Array.from(nonUrlText).reduce(
+      (acc, char) => acc + (char.charCodeAt(0) > 255 ? 2 : 1),
+      0
+    )
+    setText(inputValue)
+    setCount(urlLength + nonUrlLength)
+    adjustTextAreaHeight()
+  }
+
+  const MAX_HEIGHT = 755 // Maximum height in pixels
+
+  const adjustTextAreaHeight = () => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'auto'
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`
+
+      if (textAreaRef.current.scrollHeight > MAX_HEIGHT) {
+        textAreaRef.current.style.height = `${MAX_HEIGHT}px`
+        textAreaRef.current.style.overflowY = 'auto'
+      }
+    }
+  }
+
+  const renderText = (text: string) => {
+    const matches: { startIndex: number; endIndex: number; regex: RegExp }[] =
+      []
+
+    let match
+
+    while ((match = hashtagRegex.exec(text)) !== null) {
+      matches.push({
+        startIndex: match.index,
+        endIndex: hashtagRegex.lastIndex,
+        regex: hashtagRegex,
+      })
+    }
+    while ((match = handleRegex.exec(text)) !== null) {
+      matches.push({
+        startIndex: match.index,
+        endIndex: handleRegex.lastIndex,
+        regex: handleRegex,
+      })
+    }
+    while ((match = urlRegex.exec(text)) !== null) {
+      matches.push({
+        startIndex: match.index,
+        endIndex: urlRegex.lastIndex,
+        regex: urlRegex,
+      })
+    }
+
+    matches.sort((a, b) => a.startIndex - b.startIndex)
+
+    const result: JSX.Element[] = []
+
+    let lastIndex = 0
+
+    for (const match of matches) {
+      const { startIndex, endIndex, regex } = match
+
+      const beforeSegment = text.slice(lastIndex, startIndex)
+      const matchSegment = text.slice(startIndex, endIndex)
+
+      result.push(<span key={`before-${startIndex}`}>{beforeSegment}</span>)
+      result.push(
+        <span key={`match-${startIndex}`} className="text-blue-500">
+          {matchSegment}
+        </span>
+      )
+      lastIndex = endIndex
+    }
+
+    if (lastIndex < text.length) {
+      const remainingSegment = text.slice(lastIndex)
+      result.push(
+        <span key={`remaining-${lastIndex}`}>{remainingSegment}</span>
+      )
+    }
+
+    return (
+      <div className="whitespace-pre-wrap pb-2">
+        {result.map((element, index) => (
+          <Fragment key={index}>
+            {element}
+            {index < result.length - 1 && ''}
+          </Fragment>
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="mx-auto max-w-6xl px-4">
+      <div className="py-8">
+        <h1 className="mb-4 text-center text-3xl font-bold">Tweet Editor</h1>
+        <div className="mb-1 flex items-center justify-between space-x-2">
+          <div className="px-2">
+            <span className={count > 280 ? 'text-red-500' : ''}>{count}</span>
+          </div>
+          <button
+            onClick={handleCopy}
+            className="rounded border border-gray-800 px-2 text-sm hover:border-gray-700"
           >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            Copy
+          </button>
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <div className="space-y-2 sm:flex sm:space-x-2 sm:space-y-0">
+          <div className="h-full w-full rounded bg-gray-800 px-4 pt-2">
+            <textarea
+              rows={5}
+              ref={textAreaRef}
+              value={text}
+              onChange={handleChange}
+              className="w-full resize-none bg-gray-800 focus:outline-none"
+            />
+          </div>
+          <div
+            ref={contentRef}
+            className="max-h-192 w-full overflow-y-auto rounded bg-gray-900 px-4 pt-2"
+          >
+            {renderText(text)}
+          </div>
+        </div>
       </div>
     </main>
   )
